@@ -1,1 +1,384 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ForexAI Signal</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050a0e;--surface:#0a1520;--surface2:#0f1e2e;--border:#1a3045;--accent:#00e5ff;--accent2:#00ff88;--accent3:#ff6b35;--danger:#ff3d5a;--text:#e8f4f8;--text-dim:#5a8a9f;--text-mid:#8ab4c8;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+.wrap{max-width:480px;margin:0 auto;padding:0 16px 80px;position:relative;z-index:1;}
 
+/* Header */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:18px 0 14px;border-bottom:1px solid var(--border);margin-bottom:20px;}
+.hdr-title{font-size:16px;font-weight:800;letter-spacing:.5px;}
+.badge{display:flex;align-items:center;gap:6px;font-family:'Space Mono',monospace;font-size:10px;color:var(--accent2);background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.25);border-radius:20px;padding:4px 10px;}
+.badge-dot{width:6px;height:6px;border-radius:50%;background:var(--accent2);animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 6px var(--accent2);}50%{opacity:.4;}}
+
+/* Online card */
+.online-card{background:var(--surface);border:1px solid rgba(0,255,136,.2);border-radius:12px;padding:14px 16px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;}
+.online-left{display:flex;align-items:center;gap:10px;}
+.online-dot{width:8px;height:8px;border-radius:50%;background:var(--accent2);animation:pulse 1.5s infinite;flex-shrink:0;}
+.online-label{font-size:11px;color:var(--text-dim);}
+.online-name{font-size:13px;font-weight:700;color:var(--accent2);}
+.online-right{text-align:right;}
+.online-status{font-size:13px;font-weight:800;color:var(--accent2);font-family:'Space Mono',monospace;}
+.online-sub{font-size:10px;color:var(--text-dim);}
+
+/* Ticker */
+.ticker-wrap{overflow:hidden;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:20px;padding:8px 0;}
+.ticker{display:flex;gap:32px;animation:scroll 22s linear infinite;white-space:nowrap;}
+@keyframes scroll{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+.ti{display:flex;align-items:center;gap:8px;font-family:'Space Mono',monospace;font-size:11px;}
+.ti-pair{color:var(--text-mid);}
+.ti-price{color:var(--text);font-weight:700;}
+.ti-chg.up{color:var(--accent2);}
+.ti-chg.dn{color:var(--danger);}
+
+/* Section label */
+.slbl{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px;}
+
+/* Pairs */
+.pairs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;}
+.pair-btn{padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text-mid);font-family:'Space Mono',monospace;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;}
+.pair-btn:hover,.pair-btn.active{background:rgba(0,229,255,.1);border-color:var(--accent);color:var(--accent);box-shadow:0 0 16px rgba(0,229,255,.2);}
+
+/* Price input */
+.price-wrap{position:relative;margin-bottom:20px;}
+.price-wrap .lbl{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;}
+.price-ico{position:absolute;left:14px;top:calc(50% + 10px);transform:translateY(-50%);color:var(--accent);font-size:13px;}
+.price-inp{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px 12px 36px;color:var(--text);font-family:'Space Mono',monospace;font-size:14px;outline:none;transition:border-color .2s;}
+.price-inp:focus{border-color:var(--accent);}
+.live-tag{position:absolute;right:12px;top:calc(50% + 10px);transform:translateY(-50%);font-size:9px;font-weight:700;letter-spacing:1px;color:var(--accent2);background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.2);border-radius:4px;padding:2px 6px;cursor:pointer;}
+
+/* Style */
+.style-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px;}
+.style-btn{padding:11px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text-mid);font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .25s;text-align:center;letter-spacing:1px;}
+.style-btn span{display:block;font-size:16px;margin-bottom:4px;}
+.style-btn.active{background:rgba(0,229,255,.12);border-color:var(--accent);color:var(--accent);box-shadow:0 0 16px rgba(0,229,255,.2);}
+.style-btn.active-sw{background:rgba(255,107,53,.12);border-color:var(--accent3);color:var(--accent3);}
+.style-hint{font-size:11px;color:var(--accent2);margin-bottom:20px;}
+
+/* Generate btn */
+.gen-btn{width:100%;padding:16px;background:linear-gradient(135deg,#00e5ff,#00b8d9);border:none;border-radius:12px;color:#050a0e;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;letter-spacing:1px;cursor:pointer;transition:all .3s;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:24px;}
+.gen-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,229,255,.4);}
+.gen-btn.loading{background:var(--surface2);color:var(--accent);border:1px solid var(--border);pointer-events:none;}
+.spinner{width:18px;height:18px;border:2px solid rgba(0,229,255,.2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;display:none;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* Signal Card */
+.sig-card{background:#0d1c2a;border:1px solid var(--border);border-radius:14px;overflow:hidden;display:none;animation:up .4s ease;margin-bottom:16px;}
+@keyframes up{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.sc-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:rgba(0,229,255,.04);border-bottom:1px solid var(--border);}
+.sc-hdr-l{display:flex;align-items:center;gap:10px;}
+.sc-ico{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;}
+.sc-ico.long{background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.25);color:var(--accent2);}
+.sc-ico.short{background:rgba(255,61,90,.1);border:1px solid rgba(255,61,90,.25);color:var(--danger);}
+.sc-pair{font-size:16px;font-weight:800;}
+.sc-tags{display:flex;gap:5px;margin-top:4px;}
+.tag{font-size:9px;font-weight:700;letter-spacing:1.5px;padding:2px 8px;border-radius:4px;}
+.tag.buy{background:rgba(0,255,136,.15);color:var(--accent2);}
+.tag.sell{background:rgba(255,61,90,.15);color:var(--danger);}
+.tag.sty{background:rgba(0,229,255,.1);color:var(--accent);}
+.sc-conf{text-align:right;}
+.sc-conf-lbl{font-size:8px;letter-spacing:1.5px;color:var(--text-dim);text-transform:uppercase;display:block;margin-bottom:2px;}
+.sc-conf-val{font-size:13px;font-weight:800;font-family:'Space Mono',monospace;}
+.sc-conf-val.HIGH{color:var(--accent2);}
+.sc-conf-val.MEDIUM{color:#ffd700;}
+.sc-conf-val.LOW{color:var(--accent3);}
+
+.sc-main{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--border);}
+.sc-entry{padding:14px 16px;border-right:1px solid var(--border);}
+.sc-tp{padding:14px 16px;}
+.sc-flbl{font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;}
+.sc-etype{font-size:13px;color:var(--text);font-weight:600;}
+.sc-eprice{font-family:'Space Mono',monospace;font-size:16px;font-weight:700;margin-top:2px;}
+.sc-tprow{display:flex;justify-content:space-between;margin-bottom:5px;}
+.sc-tplbl{font-family:'Space Mono',monospace;font-size:11px;color:var(--text-dim);}
+.sc-tpval{font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:var(--accent2);}
+
+.sc-sl{padding:12px 16px;border-bottom:1px solid var(--border);}
+.sc-slval{font-family:'Space Mono',monospace;font-size:22px;font-weight:700;color:var(--danger);text-shadow:0 0 14px rgba(255,61,90,.4);margin-top:2px;}
+
+.sc-levels{display:grid;grid-template-columns:1fr 1fr;padding:12px 16px;gap:16px;}
+.sc-lrow{display:flex;justify-content:space-between;margin-bottom:5px;}
+.sc-lname{font-size:11px;color:var(--text-dim);}
+.sc-lval{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:var(--text);}
+.sc-lval.acc{color:var(--accent);}
+
+.sc-div{height:1px;background:var(--border);margin:0 16px;}
+.sc-analysis{padding:12px 16px;}
+.sc-aitem{display:flex;align-items:flex-start;gap:6px;margin-top:5px;font-size:11px;color:var(--text-mid);line-height:1.55;}
+.sc-aitem::before{content:'•';color:var(--accent);flex-shrink:0;}
+.sc-inv{padding:10px 16px 14px;}
+.sc-invtxt{font-size:11px;color:rgba(255,61,90,.8);line-height:1.5;margin-top:4px;font-style:italic;}
+
+.copy-btn{display:block;width:calc(100% - 32px);margin:12px 16px 14px;padding:12px;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--text-mid);font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.5px;}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);}
+.copy-btn.copied{border-color:var(--accent2);color:var(--accent2);}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface2);border:1px solid var(--accent2);border-radius:10px;padding:12px 20px;color:var(--accent2);font-size:13px;font-weight:700;z-index:100;transition:transform .3s;white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="hdr">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="width:32px;height:32px;background:var(--surface);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--text-mid);">←</div>
+      <span class="hdr-title">ForexAI Signal</span>
+    </div>
+    <div class="badge"><div class="badge-dot"></div>SIGNAL: ON</div>
+  </div>
+
+  <!-- Online Card -->
+  <div class="online-card">
+    <div class="online-left">
+      <div class="online-dot"></div>
+      <div>
+        <div class="online-label">ForexAI Cloud Server</div>
+        <div class="online-name">Signal Engine Online 24 Jam ✅</div>
+      </div>
+    </div>
+    <div class="online-right">
+      <div class="online-status">AKTIF</div>
+      <div class="online-sub">Railway · Cloud</div>
+    </div>
+  </div>
+
+  <!-- Ticker -->
+  <div class="ticker-wrap"><div class="ticker" id="ticker"></div></div>
+
+  <!-- Pairs -->
+  <div class="slbl">HOT PAIRS / FOREX</div>
+  <div class="pairs">
+    <button class="pair-btn active" onclick="selPair(this,'EUR/USD')">EUR/USD</button>
+    <button class="pair-btn" onclick="selPair(this,'GBP/USD')">GBP/USD</button>
+    <button class="pair-btn" onclick="selPair(this,'USD/JPY')">USD/JPY</button>
+    <button class="pair-btn" onclick="selPair(this,'AUD/USD')">AUD/USD</button>
+    <button class="pair-btn" onclick="selPair(this,'USD/CAD')">USD/CAD</button>
+    <button class="pair-btn" onclick="selPair(this,'GBP/JPY')">GBP/JPY</button>
+    <button class="pair-btn" onclick="selPair(this,'EUR/GBP')">EUR/GBP</button>
+    <button class="pair-btn" onclick="selPair(this,'XAU/USD')">XAU/USD</button>
+  </div>
+
+  <!-- Price -->
+  <div class="price-wrap">
+    <div class="lbl">CURRENT PRICE (OPTIONAL)</div>
+    <span class="price-ico">◎</span>
+    <input class="price-inp" id="priceInp" value="1.08342" placeholder="Masukkan harga..."/>
+    <span class="live-tag" onclick="refreshPrice()">↻ LIVE</span>
+  </div>
+
+  <!-- Style -->
+  <div class="slbl">TRADE STYLE</div>
+  <div class="style-grid">
+    <button class="style-btn" onclick="selStyle(this,'SCALP')" data-desc="Target cepat · 15-30 menit · SL ketat"><span>⚡</span>SCALP</button>
+    <button class="style-btn active" onclick="selStyle(this,'DAYTRADE')" data-desc="Intraday · 4-8 jam · Balance risk"><span>📈</span>DAYTRADE</button>
+    <button class="style-btn" onclick="selStyle(this,'SWING')" data-desc="Rentang lebar · 3-7 hari · Target jauh"><span>🌊</span>SWING</button>
+  </div>
+  <div class="style-hint" id="styleHint">ℹ Intraday · 4-8 jam · Balance risk/reward</div>
+
+  <!-- Generate -->
+  <button class="gen-btn" id="genBtn" onclick="generate()">
+    <div class="spinner" id="spinner"></div>
+    <span id="genTxt">GENERATE SIGNAL →</span>
+  </button>
+
+  <!-- Signal Card -->
+  <div class="sig-card" id="sigCard">
+    <div class="sc-hdr">
+      <div class="sc-hdr-l">
+        <div class="sc-ico long" id="scIco">↗</div>
+        <div>
+          <div class="sc-pair" id="scPair">EUR/USD — LONG</div>
+          <div class="sc-tags">
+            <span class="tag buy" id="scDir">BUY</span>
+            <span class="tag sty" id="scSty">DAYTRADE</span>
+          </div>
+        </div>
+      </div>
+      <div class="sc-conf">
+        <span class="sc-conf-lbl">CONFIDENCE</span>
+        <span class="sc-conf-val HIGH" id="scConf">HIGH</span>
+      </div>
+    </div>
+
+    <div class="sc-main">
+      <div class="sc-entry">
+        <div class="sc-flbl">ENTRY (REF)</div>
+        <div class="sc-etype">Market (Spot Price)</div>
+        <div class="sc-eprice" id="scEntry">—</div>
+      </div>
+      <div class="sc-tp">
+        <div class="sc-flbl">TAKE PROFIT</div>
+        <div class="sc-tprow"><span class="sc-tplbl">TP1</span><span class="sc-tpval" id="scTP1">—</span></div>
+        <div class="sc-tprow"><span class="sc-tplbl">TP2</span><span class="sc-tpval" id="scTP2">—</span></div>
+      </div>
+    </div>
+
+    <div class="sc-sl">
+      <div class="sc-flbl" style="color:var(--danger)">STOP LOSS (SL)</div>
+      <div class="sc-slval" id="scSL">—</div>
+    </div>
+
+    <div class="sc-levels">
+      <div>
+        <div class="sc-flbl">KEY LEVELS</div>
+        <div class="sc-lrow"><span class="sc-lname">Supp:</span><span class="sc-lval" id="scSupp">—</span></div>
+        <div class="sc-lrow"><span class="sc-lname">Res:</span><span class="sc-lval" id="scRes">—</span></div>
+      </div>
+      <div>
+        <div class="sc-flbl">TRADE METRICS</div>
+        <div class="sc-lrow"><span class="sc-lname">R:R</span><span class="sc-lval acc" id="scRR">—</span></div>
+        <div class="sc-lrow"><span class="sc-lname">Exp:</span><span class="sc-lval" id="scExp">—</span></div>
+      </div>
+    </div>
+
+    <div class="sc-div"></div>
+    <div class="sc-analysis">
+      <div class="sc-flbl">ANALISIS AI FLOW</div>
+      <div id="scAnalysis"></div>
+    </div>
+
+    <div class="sc-div"></div>
+    <div class="sc-inv">
+      <div class="sc-flbl" style="color:var(--danger)">INVALIDATION</div>
+      <div class="sc-invtxt" id="scInvalid">—</div>
+    </div>
+
+    <button class="copy-btn" id="copyBtn" onclick="copySignal()">📋 SALIN DETAIL SIGNAL</button>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '';
+let pair = 'EUR/USD', style = 'DAYTRADE', signal = null;
+
+const PRICES = {
+  'EUR/USD':1.08342,'GBP/USD':1.26580,'USD/JPY':149.820,
+  'AUD/USD':0.64210,'USD/CAD':1.35890,'GBP/JPY':189.640,
+  'EUR/GBP':0.85540,'XAU/USD':3150.00
+};
+
+async function apiFetch(path, method='GET', body=null){
+  try{
+    const o={method,headers:{'Content-Type':'application/json'}};
+    if(body) o.body=JSON.stringify(body);
+    const r=await fetch(API+path,o);
+    return await r.json();
+  }catch(e){return{error:true};}
+}
+
+// Ticker
+async function loadTicker(){
+  const data=await apiFetch('/api/prices');
+  const items=data.error?Object.entries(PRICES).map(([p,v])=>({pair:p,price:v,change_pct:(Math.random()*.6-.3).toFixed(2),up:Math.random()>.5})):data;
+  const html=[...items,...items].map(d=>
+    `<span class="ti"><span class="ti-pair">${d.pair}</span><span class="ti-price">${d.price}</span><span class="ti-chg ${d.up?'up':'dn'}">${d.change_pct>0?'+':''}${d.change_pct}%</span></span>`
+  ).join('');
+  document.getElementById('ticker').innerHTML=html;
+}
+
+function selPair(el,p){
+  document.querySelectorAll('.pair-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active'); pair=p;
+  document.getElementById('priceInp').value=PRICES[p]||'1.00000';
+}
+
+async function refreshPrice(){
+  const slug=pair.replace('/','−');
+  const d=await apiFetch(`/api/price/${pair.replace('/','-')}`);
+  if(!d.error&&d.price){
+    document.getElementById('priceInp').value=d.price;
+    toast('✅ Harga diperbarui');
+  }
+}
+
+function selStyle(el,s){
+  document.querySelectorAll('.style-btn').forEach(b=>b.classList.remove('active','active-sw'));
+  style=s;
+  el.classList.add(s==='SWING'?'active-sw':'active');
+  document.getElementById('styleHint').textContent='ℹ '+el.dataset.desc;
+}
+
+async function generate(){
+  const btn=document.getElementById('genBtn');
+  const sp=document.getElementById('spinner');
+  const txt=document.getElementById('genTxt');
+  const price=parseFloat(document.getElementById('priceInp').value)||PRICES[pair];
+
+  btn.classList.add('loading');
+  sp.style.display='block';
+  txt.textContent='Menganalisis pasar...';
+  document.getElementById('sigCard').style.display='none';
+
+  const data=await apiFetch('/api/signal/generate','POST',{pair,style,price});
+
+  btn.classList.remove('loading');
+  sp.style.display='none';
+  txt.textContent='GENERATE SIGNAL →';
+
+  if(data.error||!data.success){
+    toast('❌ Gagal generate signal. Coba lagi.');
+    return;
+  }
+
+  const s=data.signal; signal=s;
+  const bull=s.order_type==='BUY';
+
+  document.getElementById('scPair').textContent=`${s.pair} — ${s.direction}`;
+  const ico=document.getElementById('scIco');
+  ico.textContent=bull?'↗':'↙';
+  ico.className=`sc-ico ${bull?'long':'short'}`;
+  document.getElementById('scDir').textContent=s.order_type;
+  document.getElementById('scDir').className=`tag ${bull?'buy':'sell'}`;
+  document.getElementById('scSty').textContent=s.style;
+  document.getElementById('scConf').textContent=s.confidence;
+  document.getElementById('scConf').className=`sc-conf-val ${s.confidence}`;
+  document.getElementById('scEntry').textContent=s.entry_price;
+  document.getElementById('scSL').textContent=s.sl;
+  document.getElementById('scTP1').textContent=s.tp1;
+  document.getElementById('scTP2').textContent=s.tp2;
+  document.getElementById('scSupp').textContent=s.support;
+  document.getElementById('scRes').textContent=s.resistance;
+  document.getElementById('scRR').textContent=s.rr_ratio;
+  document.getElementById('scExp').textContent=s.expiry;
+  document.getElementById('scInvalid').textContent=s.invalidation;
+  document.getElementById('scAnalysis').innerHTML=s.analysis.map(a=>`<div class="sc-aitem">${a}</div>`).join('');
+
+  const card=document.getElementById('sigCard');
+  card.style.display='block';
+  card.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function copySignal(){
+  if(!signal)return;
+  const s=signal;
+  const txt=`=== ForexAI Signal ===\nPair   : ${s.pair}\nArah   : ${s.direction} (${s.order_type})\nStyle  : ${s.style}\n---\nEntry  : ${s.entry_price}\nSL     : ${s.sl}\nTP1    : ${s.tp1}\nTP2    : ${s.tp2}\n---\nSupport: ${s.support}\nRes    : ${s.resistance}\nR:R    : ${s.rr_ratio}\nExpiry : ${s.expiry}\nWin Rate: ${s.win_rate}\nConf   : ${s.confidence}\n---\nInvalidasi: ${s.invalidation}\nWaktu  : ${s.generated_at}`;
+  navigator.clipboard.writeText(txt).then(()=>{
+    const b=document.getElementById('copyBtn');
+    b.textContent='✅ TERSALIN!';b.classList.add('copied');
+    setTimeout(()=>{b.textContent='📋 SALIN DETAIL SIGNAL';b.classList.remove('copied');},2500);
+  });
+}
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+loadTicker();
+setInterval(loadTicker,30000);
+</script>
+</body>
+</html>
